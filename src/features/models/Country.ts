@@ -1,6 +1,6 @@
 export interface Country {
   name: Name;
-  topLevelDomain: string[];
+  tld: string[]; // top level domain
   capital: string;
   region: string;
   subregion: string;
@@ -8,7 +8,7 @@ export interface Country {
   population: number;
   borders: string[];
   currencies: Currency;
-  languages: Language[];
+  languages: Language;
   flags: Flag;
 }
 
@@ -26,14 +26,14 @@ export interface NativeName {
 }
 
 export interface Currency {
-  code: string;
-  name: string;
-  symbol: string;
+  [key: string]: {
+    name: string;
+    symbol: string;
+  };
 }
 
 export interface Language {
-  name: string;
-  nativeName: string;
+  [key: string]: string;
 }
 
 export interface Flag {

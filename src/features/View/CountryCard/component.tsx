@@ -7,10 +7,10 @@ export interface CountryProps {
 
 const CountryCard = ({ country }: CountryProps) => {
   return (
-    <div className="col-span-1 flex flex-col rounded-sm bg-white shadow-lg dark:bg-neutral-700">
+    <div className="col-span-1 flex flex-col card">
       <Link to={`detail/${country.name.common}`}>
         <img
-          className="rounded-t-sm w-full card-img object-cover"
+          className="card-img"
           src={country.flags.svg}
           alt={country.flags.alt}
         />

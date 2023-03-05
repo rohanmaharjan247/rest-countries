@@ -1,33 +1,37 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeftLong } from '@fortawesome/free-solid-svg-icons';
 import { Link, useParams } from 'react-router-dom';
-import { useAppSelector } from '../../../app/hook';
-import { getCountry } from '../../slices/countrySlice';
+import { useGetCountryQuery } from '../../slices/countrySlice';
+import { SerializedError } from '@reduxjs/toolkit';
 
 const CountryDetail = () => {
   const { countryName } = useParams();
-  console.log('countryName', countryName);
 
-  const country = useAppSelector((state) => {
-    console.log('state', state);
-    return getCountry(state, countryName ?? '');
-  });
+  const {
+    data: countries,
+    isLoading,
+    isError,
+    error,
+  } = useGetCountryQuery(countryName ?? '');
 
-  const nativeName = Object.keys(country?.name.nativeName || {});
-  const currency = Object.keys(country?.currencies || {});
-  const language = Object.keys(country?.languages || {});
-  console.log('🚀 --> CountryDetail --> nativeName:', nativeName);
-  console.log('🚀 --> CountryDetail --> currency:', currency);
-  console.log('🚀 --> CountryDetail --> language:', language);
+  const [country] = countries ?? [];
+  const err = error as SerializedError;
+
+  const [nativeNameObject] = Object.keys(country?.name.nativeName || {});
+  const [currency] = Object.keys(country?.currencies || {});
+  const [language] = Object.keys(country?.languages || {});
 
   console.log('country', country);
+
+  if (isLoading) return <p>Loading...</p>;
+  if (isError) return <p>{err.message}</p>;
 
   return (
     <div>
       <div className="my-8 ">
         <Link
           to="/"
-          className="px-6 py-2 bg-light-gray-800 text-dark-blue-800 dark:bg-dark-blue-400 dark:text-white"
+          className="px-6 py-2 bg-white text-dark-blue-800 drop-shadow-md shadow-dark-blue-800 dark:bg-dark-blue-400 dark:text-white"
         >
           <span className="mr-4">
             <FontAwesomeIcon icon={faArrowLeftLong} />
@@ -43,18 +47,18 @@ const CountryDetail = () => {
           <h2 className="text-lg md:text-2xl font-bold my-4">
             {country?.name?.common}
           </h2>
-          <div className="flex flex-col gap-4 md:flex-row md:mb-8">
+          <div className="flex flex-col gap-4 md:flex-row md:mb-8 md:justify-between md:min-w-md md:w-96">
             <ul className="text-sm">
               <li className="mb-2">
                 <span className="mr-1">Native Name:</span>
                 <span className="text-dark-blue-800 dark:text-light-gray-800">
-                  Belgie
+                  {country.name?.nativeName[nativeNameObject]?.common}
                 </span>
               </li>
               <li className="mb-2">
                 <span className="mr-1">Population:</span>
                 <span className="text-dark-blue-800 dark:text-light-gray-800">
-                  {country?.population.toLocaleString()}
+                  {country?.population?.toLocaleString()}
                 </span>
               </li>
               <li className="mb-2">
@@ -80,19 +84,19 @@ const CountryDetail = () => {
               <li className="mb-2">
                 <span className="mr-1">Top Level Domain:</span>
                 <span className="text-dark-blue-800 dark:text-light-gray-800">
-                  {country?.topLevelDomain?.join(',')}
+                  {country?.tld?.join(',')}
                 </span>
               </li>
               <li className="mb-2">
                 <span className="mr-1">Currencies:</span>
                 <span className="text-dark-blue-800 dark:text-light-gray-800">
-                  --
+                  {country.currencies[currency]?.name}
                 </span>
               </li>
               <li className="mb-2">
                 <span className="mr-1">Languages:</span>
                 <span className="text-dark-blue-800 dark:text-light-gray-800">
-                  --
+                  {country.languages[language]}
                 </span>
               </li>
             </ul>
@@ -100,9 +104,14 @@ const CountryDetail = () => {
           <div className="my-4">
             <h4 className="my-2 text-md md:my-4">Border Countries</h4>
             <div className="flex gap-4 text-sm">
-              <p className="bg-dark-blue-400 px-4 py-1">France</p>
-              <p className="bg-dark-blue-400 px-4 py-1">France</p>
-              <p className="bg-dark-blue-400 px-4 py-1">France</p>
+              {country.borders.map((border, index) => (
+                <p
+                  className="bg-white drop-shadow-md shadow-dark-blue-800 dark:bg-dark-blue-400 dark:text-white px-4 py-1"
+                  key={index}
+                >
+                  {border}
+                </p>
+              ))}
             </div>
           </div>
         </div>

@@ -3,11 +3,30 @@
 @tailwind utilities;
 
 body {
-  @apply bg-light-gray-100 dark:bg-dark-blue-700 text-dark-blue-800 dark:text-white;
+  /* @apply bg-light-gray-100 dark:bg-dark-blue-700 text-dark-blue-800 dark:text-white; */
 }
 
-.card-img {
-  min-height: 155px;
+.dark {
+  @apply bg-dark-blue-700 text-white;
+}
+
+.light {
+  @apply bg-light-gray-100 text-dark-blue-800;
+}
+
+@layer components {
+  .card {
+    @apply rounded-sm bg-white shadow-lg dark:bg-neutral-700;
+  }
+
+  .card-img {
+    @apply rounded-t-sm w-full object-cover;
+    min-height: 155px;
+  }
+
+  .select-dropdown {
+    @apply bg-white border border-gray-300 text-light-gray-800 drop-shadow-md shadow-dark-blue-800 text-sm rounded-sm focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-dark-blue-400 dark:border-dark-blue-400 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 dark:shadow-dark-blue-400;
+  }
 }
 
 @media screen and (min-width: 375px) {
