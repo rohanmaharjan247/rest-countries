@@ -26,7 +26,7 @@ const Home = () => {
     } else {
       setLoadedCountries(countriesByRegion);
     }
-  }, [region, countryName]);
+  }, [region, countryName, allCountries]);
 
   const onDropdownChanged = (e: ChangeEvent<HTMLSelectElement>) => {
     const regionName = e.target.value === 'FO' ? undefined : e.target.value;
