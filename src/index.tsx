@@ -7,6 +7,9 @@ import { Provider } from 'react-redux';
 import { store } from './app/store';
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { fetchGetAllCountry } from './features/slices/countrySlice';
+
+store.dispatch(fetchGetAllCountry());
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement

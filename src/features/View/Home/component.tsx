@@ -1,66 +1,43 @@
 import CountryCard from '../CountryCard/component';
 import Header from '../../../components/Header/component';
-import { ChangeEvent, useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 import {
-  selectCountryByRegion,
+  getStatus,
   selectAllCountries,
-  useGetAllCountryQuery,
-  useGetCountryByRegionQuery,
-  useGetCountryQuery,
+  selectCountriesByRegionOrName,
 } from '../../slices/countrySlice';
-import { SerializedError } from '@reduxjs/toolkit';
 import { useAppSelector } from '../../../app/hook';
 import { Country } from '../../models/Country';
-import useDebounce from '../../../components/shared/hook';
+import { LoadingState } from '../../models/LoadingState';
 
 const Home = () => {
-  const [region, setRegion] = useState('');
-  const [countryName, setCountryName] = useState('');
-  const debouncedCountryName = useDebounce<string>(countryName, 500);
-  const { isLoading, isError, error } = useGetAllCountryQuery();
-  const {
-    isLoading: isLoadingByRegion,
-    isError: isErrorByRegion,
-    error: errorByRegion,
-  } = useGetCountryByRegionQuery(region, {
-    skip: !region || region === 'FO' || region === '',
-  });
-  const { data: countriesByName, isLoading: isLoadingByName } =
-    useGetCountryQuery(countryName, {
-      skip: !countryName || countryName === '',
-    });
+  const [region, setRegion] = useState<string>();
+  const [countryName, setCountryName] = useState<string>();
+  const [loadedCountries, setLoadedCountries] = useState<Country[]>([]);
 
   const allCountries = useAppSelector(selectAllCountries);
-  const { selectAll: selectAllCountryByRegion } = selectCountryByRegion(region);
-  const countryByRegionList = useAppSelector(selectAllCountryByRegion);
-
-  let loadedCountries: Country[];
-
-  if (countriesByName && countriesByName.length > 0) {
-    loadedCountries = countriesByName;
-  } else if (countryByRegionList?.length > 0) {
-    loadedCountries = countryByRegionList;
-  } else {
-    loadedCountries = allCountries;
-  }
-
-  const err = (error as SerializedError) || (errorByRegion as SerializedError);
-
-  // console.log('data', countries);
+  const countriesByRegion = useAppSelector((state) =>
+    selectCountriesByRegionOrName(state, { region, countryName })
+  );
+  const status = useAppSelector(getStatus);
+  useEffect(() => {
+    if (!countryName && !region) {
+      setLoadedCountries(allCountries);
+    } else {
+      setLoadedCountries(countriesByRegion);
+    }
+  }, [region, countryName]);
 
   const onDropdownChanged = (e: ChangeEvent<HTMLSelectElement>) => {
-    //console.log(e.target.value);
-    setRegion(e.target.value);
+    const regionName = e.target.value === 'FO' ? undefined : e.target.value;
+    setRegion(regionName);
   };
 
   const onSearchChanged = (e: ChangeEvent<HTMLInputElement>) => {
-    setCountryName(e.target.value);
+    const countryName = e.target.value;
+    setCountryName(countryName);
   };
 
-  if (isError || isErrorByRegion) {
-    console.error(error);
-    return <p>Error: {err.message}</p>;
-  }
   return (
     <>
       <Header
@@ -69,7 +46,7 @@ const Home = () => {
         onDropdownChanged={onDropdownChanged}
         onSearchChanged={onSearchChanged}
       />
-      {isLoading || isLoadingByRegion || isLoadingByName ? (
+      {status === LoadingState.PENDING ? (
         <p>Loading...</p>
       ) : (
         <div className="grid grid-cols-1 gap-16 md:grid-cols-3 lg:grid-cols-4 my-4">

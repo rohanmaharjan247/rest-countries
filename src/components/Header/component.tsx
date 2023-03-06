@@ -3,8 +3,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { ChangeEvent, useState } from 'react';
 
 interface HeaderProps {
-  region: string;
-  countryName: string;
+  region: string | undefined;
+  countryName: string | undefined;
   onDropdownChanged: (e: ChangeEvent<HTMLSelectElement>) => void;
   onSearchChanged: (e: ChangeEvent<HTMLInputElement>) => void;
 }

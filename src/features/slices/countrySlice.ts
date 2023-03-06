@@ -1,90 +1,102 @@
 import { RootState } from './../../app/store';
-import { countryApi } from './../api/apiSlice';
 import {
+  createAsyncThunk,
   createEntityAdapter,
   createSelector,
-  EntityId,
+  createSlice,
 } from '@reduxjs/toolkit';
-import type { EntityState } from '@reduxjs/toolkit';
 import { Country } from '../models/Country';
+import axios from 'axios';
+import { LoadingState } from '../models/LoadingState';
+
+const axiosInstance = axios.create({
+  baseURL: 'https://restcountries.com/v3.1/',
+});
+
+interface FetchError {
+  message: string;
+}
+
+export type FilterType = {
+  region: string | undefined;
+  countryName: string | undefined;
+};
+
+const sortAlphabetically = (first: Country, second: Country) => {
+  return first.name.common.localeCompare(second.name.common);
+};
 
 const countryAdapter = createEntityAdapter<Country>({
   selectId: (country) => country.name.common,
+  sortComparer: sortAlphabetically,
 });
 
-const initialState = countryAdapter.getInitialState();
-
-export const extendedApiSlice = countryApi.injectEndpoints({
-  endpoints: (builder) => ({
-    getAllCountry: builder.query<EntityState<Country>, void>({
-      query: () => `all`,
-      transformResponse: (response: Country[]) => {
-        console.log(response);
-        return countryAdapter.setAll(initialState, response);
-      },
-    }),
-    getCountry: builder.query<Country[], string>({
-      query: (name: string) => `name/${name}`,
-    }),
-    getCountryByRegion: builder.query<EntityState<Country>, string>({
-      query: (region: string) => `region/${region}`,
-      transformResponse: (response: Country[]) => {
-        return countryAdapter.setAll(initialState, response);
-      },
-    }),
-  }),
+const initialState = countryAdapter.getInitialState({
+  status: LoadingState.IDLE,
 });
 
-const selectCountries = extendedApiSlice.endpoints.getAllCountry.select();
+export const fetchGetAllCountry = createAsyncThunk<
+  Country[],
+  void,
+  { rejectValue: FetchError }
+>('country/getallcountry', async (_, thunkApi) => {
+  try {
+    const response = await axiosInstance.get('all');
+    return response.data as Country[];
+  } catch (error) {
+    return thunkApi.rejectWithValue({
+      message: 'Error while fetching all countries',
+    });
+  }
+});
 
-export const selectCountryByRegion = (region: string) => {
-  const countryRegionApi =
-    extendedApiSlice.endpoints.getCountryByRegion.select(region);
-  const countryAdapterSelectors = createSelector(
-    countryRegionApi,
-    (countryByRegionResult: any) =>
-      countryAdapter.getSelectors(
-        () => countryByRegionResult.data ?? initialState
-      )
-  );
+const countrySlice = createSlice({
+  name: 'countries',
+  initialState,
+  reducers: {},
+  extraReducers(builder) {
+    builder
+      .addCase(fetchGetAllCountry.pending, (state) => {
+        state.status = LoadingState.PENDING;
+      })
+      .addCase(fetchGetAllCountry.fulfilled, (state, action) => {
+        state.status = LoadingState.SUCCESS;
+        countryAdapter.upsertMany(state, action.payload);
+      });
+  },
+});
 
-  const countryRegion = {
-    selectAll: createSelector(countryAdapterSelectors, (s) =>
-      s.selectAll(undefined)
-    ),
-    selectEntities: createSelector(countryAdapterSelectors, (s) =>
-      s.selectEntities(undefined)
-    ),
-    selectIds: createSelector(countryAdapterSelectors, (s) =>
-      s.selectIds(undefined)
-    ),
-    selectTotal: createSelector(countryAdapterSelectors, (s) =>
-      s.selectTotal(undefined)
-    ),
-    selectById: (id: EntityId) =>
-      createSelector(countryAdapterSelectors, (s) => s.selectById(s, id)),
-  };
-  return countryRegion;
-};
+export const getAllCountries = (state: RootState) => state.countries;
 
-// export const getCountry = (state: RootState, name: string) =>
-//   selectCountries(state).data?.find((x) => x.name.common === name);
+export const getCountryByName = (state: RootState, countryName: string) =>
+  state.countries.entities[countryName];
+
+export const getStatus = (state: RootState) =>
+  state.countries.status as LoadingState;
 
 export const {
-  useGetAllCountryQuery,
-  useGetCountryByRegionQuery,
-  useGetCountryQuery,
-} = extendedApiSlice;
-
-// Learn more about selectors
-const getCountries = createSelector(
-  selectCountries,
-  (countryResult: any) => countryResult.data
+  selectAll: selectAllCountries,
+  selectById: selectCountriesById,
+} = countryAdapter.getSelectors(getAllCountries);
+export const selectCountriesByRegionOrName = createSelector(
+  [selectAllCountries, (state: RootState, filter: FilterType) => filter],
+  (countries, filter: FilterType) =>
+    countries.filter((x) => filterByNameOrRegion(x, filter))
 );
 
-export const { selectAll: selectAllCountries, selectById: selectCountryById } =
-  countryAdapter.getSelectors(
-    (state: RootState) => getCountries(state) ?? initialState
-  );
+function filterByNameOrRegion(country: Country, filter: FilterType) {
+  if (filter.region && filter.countryName)
+    return (
+      country.region.toLowerCase() === filter.region &&
+      country.name.common
+        .toLowerCase()
+        .includes(filter.countryName?.toLowerCase())
+    );
+  if (filter.region) return country.region.toLowerCase() === filter.region;
+  if (filter.countryName)
+    return country.name.common
+      .toLowerCase()
+      .includes(filter.countryName.toLowerCase());
+}
 
-//export const { getCountryByRegion } = countrySlice.actions;
+export default countrySlice.reducer;

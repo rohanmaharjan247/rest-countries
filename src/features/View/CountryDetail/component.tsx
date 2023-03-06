@@ -1,30 +1,26 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeftLong } from '@fortawesome/free-solid-svg-icons';
 import { Link, useParams } from 'react-router-dom';
-import { useGetCountryQuery } from '../../slices/countrySlice';
 import { SerializedError } from '@reduxjs/toolkit';
+import { useAppSelector } from '../../../app/hook';
+import { selectCountriesById } from '../../slices/countrySlice';
 
 const CountryDetail = () => {
   const { countryName } = useParams();
 
-  const {
-    data: countries,
-    isLoading,
-    isError,
-    error,
-  } = useGetCountryQuery(countryName ?? '');
+  const country = useAppSelector((state) =>
+    selectCountriesById(state, countryName || '')
+  );
 
-  const [country] = countries ?? [];
-  const err = error as SerializedError;
+  // const [country] = countries ?? [];
+  // const err = error as SerializedError;
 
   const [nativeNameObject] = Object.keys(country?.name.nativeName || {});
   const [currency] = Object.keys(country?.currencies || {});
   const [language] = Object.keys(country?.languages || {});
 
-  console.log('country', country);
-
-  if (isLoading) return <p>Loading...</p>;
-  if (isError) return <p>{err.message}</p>;
+  // if (isLoading) return <p>Loading...</p>;
+  // if (isError) return <p>{err.message}</p>;
 
   return (
     <div>
@@ -52,7 +48,7 @@ const CountryDetail = () => {
               <li className="mb-2">
                 <span className="mr-1">Native Name:</span>
                 <span className="text-dark-blue-800 dark:text-light-gray-800">
-                  {country.name?.nativeName[nativeNameObject]?.common}
+                  {country?.name?.nativeName[nativeNameObject]?.common}
                 </span>
               </li>
               <li className="mb-2">
@@ -90,13 +86,13 @@ const CountryDetail = () => {
               <li className="mb-2">
                 <span className="mr-1">Currencies:</span>
                 <span className="text-dark-blue-800 dark:text-light-gray-800">
-                  {country.currencies[currency]?.name}
+                  {country?.currencies[currency]?.name}
                 </span>
               </li>
               <li className="mb-2">
                 <span className="mr-1">Languages:</span>
                 <span className="text-dark-blue-800 dark:text-light-gray-800">
-                  {country.languages[language]}
+                  {country?.languages[language]}
                 </span>
               </li>
             </ul>
@@ -104,7 +100,7 @@ const CountryDetail = () => {
           <div className="my-4">
             <h4 className="my-2 text-md md:my-4">Border Countries</h4>
             <div className="flex gap-4 text-sm">
-              {country.borders.map((border, index) => (
+              {country?.borders?.map((border, index) => (
                 <p
                   className="bg-white drop-shadow-md shadow-dark-blue-800 dark:bg-dark-blue-400 dark:text-white px-4 py-1"
                   key={index}
